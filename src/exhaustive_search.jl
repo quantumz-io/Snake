@@ -1,8 +1,8 @@
-export brute_force
+export exhaustive_search
 
 struct Spectrum{T <: Real}
     energies::Array{T}
-    states::Array{Int, 2}
+    states::Vector{Vector{Int}}
 end
 
 function _energy_kernel(J, energies, σ)
@@ -22,15 +22,17 @@ function _energy_kernel(J, energies, σ)
     return
 end
 
-function brute_force(J::Array{Float64, 2}; num_states::Int=1)
+function exhaustive_search(J::Array{Float64, 2}; num_states::Int=1)
     L = size(J, 1)
     N = 2 ^ L
+
+    J_d = CUDA.CuArray(J)
     energies = CUDA.zeros(N)
     σ = CUDA.fill(Int32(-1), L, N)
 
     th = 2 ^ 10 # this should eventually vary
     bl = cld(N, th)
-    @cuda threads=th blocks=bl _energy_kernel(J, energies, σ)
+    @cuda threads=th blocks=bl _energy_kernel(J_d, energies, σ)
 
     perm = sortperm(energies)[1:num_states]
     energies_cpu = Array(view(energies, perm))

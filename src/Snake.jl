@@ -4,6 +4,6 @@ module Snake
     using Bits
     using DocStringExtensions
 
-    include("brute_force.jl")
+    include("exhaustive_search.jl")
 
 end # module
