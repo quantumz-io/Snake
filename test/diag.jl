@@ -1,17 +1,14 @@
 
 using Snake
-using CUDA
 using LinearAlgebra
 
 L = 16
+num_states = 1
 
-
-@testset "No interaction" begin
-
+@testset "Correct results when no interaction" begin
     for T ∈ (Float16, Float32, Float64)
         h = diagm(rand(T, L))
-        sp = exhaustive_search(h, num_states=1)
-
+        sp = exhaustive_search(h, num_states=num_states)
         @test sp.energies[1] ≈ -sum(h)
         @test vec(sp.states) == fill(-1, L)
     end
