@@ -4,7 +4,7 @@ using Test
 my_tests = []
 
 push!(my_tests,
-    "diag.jl",
+    "exhaustive_search.jl",
 )
 
 for my_test ∈ my_tests
