@@ -1,5 +1,10 @@
 export brute_force
 
+struct Spectrum{T <: Real} end
+    energies::Array{T}
+    states::Array{Int, 2}
+end
+
 function _energy_kernel(J, energies, σ)
     idx = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride = gridDim().x * blockDim().x
@@ -30,5 +35,9 @@ function brute_force(J::Array{Float64, 2}, num_states::Int=1)
     perm = sortperm(energies)[1:num_states]
     energies_cpu = Array(view(energies, perm))
     σ_cpu = Array(view(σ, :, perm))
-    Spectrum(energies_cpu, [σ_cpu[:, i] for i ∈ 1:size(σ_cpu, 2)])
+
+    Spectrum{eltype(J)}(
+        energies_cpu,
+        [σ_cpu[:, i] for i ∈ 1:size(σ_cpu, 2)]
+    )
 end
