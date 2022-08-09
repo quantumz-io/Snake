@@ -1,6 +1,6 @@
 export brute_force
 
-struct Spectrum{T <: Real} end
+struct Spectrum{T <: Real}
     energies::Array{T}
     states::Array{Int, 2}
 end
@@ -22,8 +22,8 @@ function _energy_kernel(J, energies, σ)
     return
 end
 
-function brute_force(J::Array{Float64, 2}, num_states::Int=1)
-    L = nv(ig)
+function brute_force(J::Array{Float64, 2}; num_states::Int=1)
+    L = size(J, 1)
     N = 2 ^ L
     energies = CUDA.zeros(N)
     σ = CUDA.fill(Int32(-1), L, N)
