@@ -6,7 +6,7 @@ version = "0.0.1"
 [deps]
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 Bits = "1654ce90-6ed3-553a-957f-9452c3a40996"
-LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 

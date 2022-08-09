@@ -30,7 +30,7 @@ function exhaustive_search(J::Array{Float64, 2}; num_states::Int=1)
     energies = CUDA.zeros(N)
     σ = CUDA.fill(Int32(-1), L, N)
 
-    th = 2 ^ 10 # this should eventually vary
+    th = 2 ^ 10
     bl = cld(N, th)
     @cuda threads=th blocks=bl _energy_kernel(J_d, energies, σ)
 
