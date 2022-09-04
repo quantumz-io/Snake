@@ -1,8 +1,16 @@
-using PyCall
-nx = pyimport("networkx")
+import Pkg
+Pkg.add("LightGraphs")
+Pkg.add("Parameters")
+Pkg.add("LinearAlgebra")
+#Pkg.add("MKL")
+Pkg.add("CUDA")
+Pkg.add("Bits")
+Pkg.add("DocStringExtensions")
+
+using LightGraphs
 using Parameters
 
-using LinearAlgebra, MKL
+using LinearAlgebra#, MKL
 using CUDA
 using Bits
 using DocStringExtensions
@@ -59,7 +67,7 @@ window_y = 100
 
 # defining snake default position
 snake_position = [1, 1]
-
+ 
 # defining first 4 blocks of snake body
 snake_body = [[1, 1]]
 
@@ -77,15 +85,15 @@ function solve()
     global snake_body, snake_position, fruit_position, fruit_spawn, direction, window_x, window_y
     height = window_y//50
     width  = window_x//50
-    ## In the hierachy of step from A* search:
-        #make the graph
-        #input to solving_HCP
+    ## In the hierachy of step from A* search: 
+        #make the graph 
+        #input to solving_HCP 
         #return the result
-
+    
     l_direct = ["UP", "DOWN", "LEFT", "RIGHT"]
     stack = []
     for d in l_direct
-        new_pos = false
+        new_pos = false 
         if d == "UP" && direction != "DOWN"
             new_pos = [snake_position[1], snake_position[2]-1]
         end
@@ -99,95 +107,93 @@ function solve()
             new_pos = [snake_position[1]+1, snake_position[2]]
         end
         if new_pos != false && 1 <= new_pos[1] <= width && 1 <= new_pos[2] <= height && new_pos ∉ snake_body
-            insert!(stack, 1, [d,
-                        abs(fruit_position[1] - new_pos[1]) +
+            insert!(stack, 1, [d, 
+                        abs(fruit_position[1] - new_pos[1]) + 
                         abs(fruit_position[2] - new_pos[2]), new_pos])
         end
     end
     stack = sort!(stack, by = x -> x[2])
     #println(stack)
     #println(fruit_position)
-    #Creating new graph for each direction
+    #Creating new graph for each direction 
     for (d,s, new_pos) in stack
-        G = nx.Graph()
-        G.add_nodes_from(1:width*height)
-
-        # Make a fully connected graph out of the board
-        for i=1:width-1
+        G = SimpleGraph(width*height)
+        # Make a fully connected graph out of the board 
+        for i=1:width-1 
             for j=1:height-1
-                G.add_edge(i+(j-1)*width, i+1+(j-1)*width)
-                G.add_edge(i+(j-1)*width, i+j*width)
+                add_edge!(G, i+(j-1)*width, i+1+(j-1)*width)
+                add_edge!(G, i+(j-1)*width, i+j*width)
             end
         end
-
-        for j=1:height-1
-            G.add_edge(width + (j-1)*width, width + j*width)
+        
+        for j=1:height-1 
+            add_edge!(G, width + (j-1)*width, width + j*width)
         end
-
+        
         for i=1:width - 1
-            G.add_edge(i + (height-1)*width, i + 1 + (height-1)*width)
+            add_edge!(G, i + (height-1)*width, i + 1 + (height-1)*width)
         end
+        
 
-
-        #Removing edge conneting snake with neighbor squares.
-        for (i,pos) in enumerate(snake_body)
-            if 1<i<length(snake_body)
+        #Removing edge conneting snake with neighbor squares. 
+        for (i,pos) in enumerate(snake_body) 
+            if 1<i<length(snake_body) 
                 neighbors = [[pos[1]+1, pos[2]], [pos[1]-1, pos[2]], [pos[1], pos[2]+1], [pos[1], pos[2]-1]]
                 for ne in neighbors
-                    if ne!=snake_body[i+1] && ne!=snake_body[i-1] && 1 <= ne[1] <= width && 1 <= ne[2] <= height
+                    if ne!=snake_body[i+1] && ne!=snake_body[i-1] && 1 <= ne[1] <= width && 1 <= ne[2] <= height 
                         try
-                            G.remove_edge(pos[1] + (pos[2]-1)*width, ne[1] + (ne[2]-1)*width)
-                        catch e
+                            rem_edge!(G, pos[1] + (pos[2]-1)*width, ne[1] + (ne[2]-1)*width)
+                        catch e 
                         end
                     end
                 end
             end
         end
+        
 
-
-        #Modifying the graph according to the new direction
-        neighbors = [[snake_position[1]+1, snake_position[2]], [snake_position[1]-1, snake_position[2]],
+        #Modifying the graph according to the new direction 
+        neighbors = [[snake_position[1]+1, snake_position[2]], [snake_position[1]-1, snake_position[2]], 
                         [snake_position[1], snake_position[2]+1], [snake_position[1], snake_position[2]-1]]
-        for ne in neighbors
-            if length(snake_body) > 1
+        for ne in neighbors 
+            if length(snake_body) > 1 
                 if ne ∉ snake_body && ne != new_pos && 1 <= ne[1] <= width && 1 <= ne[2] <= height
-                    G.remove_edge(snake_position[1] + (snake_position[2]-1)*width, ne[1] + (ne[2]-1)*width)
+                    rem_edge!(G, snake_position[1] + (snake_position[2]-1)*width, ne[1] + (ne[2]-1)*width)
                 end
             end
         end
-
+        
         ising_matrix, orderDict, size, Q = generate_qubo(G)
         res = exhaustive_search(ising_matrix)
-        @unpack energies, states = res
+        @unpack energy, state = res
         ans = [0 for i=1:size]
-        for (i,s) in enumerate(states[:,1])
+        for (i,s) in enumerate(state[:,1])
             if s == 1
                 ans[i] = s
             end
         end
-
-        if check(ans, Q, G) == false
+        
+        if check(ans, Q, G) == false 
             continue
         end
-
+        
         path_pos = []
-        for k in generate_path(ans, orderDict)
+        for k in generate_path(ans, orderDict) 
             append!(path_pos, [k%width*50 + 25, k//width*50 + 25])
         end
 
         new_game(d)
         return path_pos
-    end
+    end           
 end
 
 function generate_qubo(G)
-    n = G.order()
+    n = length(collect(vertices(G)))
     varsDict = Dict()
     orderDict = Dict()
     index = 1
     for i=1:n
-        for j=1:n
-            varsDict[(i,j)] = index
+        for j=1:n 
+            varsDict[(i,j)] = index 
             orderDict[index] = (i,j)
             index += 1
         end
@@ -195,7 +201,7 @@ function generate_qubo(G)
     # initialize Q
     Q = Dict()
     for i=1:n*n
-        for j=1:n*n
+        for j=1:n*n 
             Q[i,j] = 0
         end
     end
@@ -214,9 +220,9 @@ function generate_qubo(G)
         end
     end
     # p_2
-    for iprime =1:n
+    for iprime =1:n 
         for i =1:n
-            index = varsDict[(i,iprime)]
+            index = varsDict[(i,iprime)] 
             Q[index,index] -= 2
         end
         for i1 = 1:n
@@ -227,11 +233,11 @@ function generate_qubo(G)
             end
         end
     end
-
+    
     # h
     for i_1 = 1:n
         for i_2 = 1:n
-            if (i_2 ∉ G.neighbors(i_1)) && (i_1 != i_2)
+            if (i_2 ∉ neighbors(G, i_1)) && (i_1 != i_2)
                 for j = 1:n-1
                     index_1 = varsDict[i_1,j]
                     index_2 = varsDict[i_2,j+1]
@@ -243,12 +249,12 @@ function generate_qubo(G)
             end
         end
     end
-
+    
     # Making Q uppertriangular for i in range(n*n):
     for i = 1:n*n
         for j = 1:n*n
             if (i > j) && (Q[i,j]!=0)
-                Q[j,i] += Q[i,j]
+                Q[j,i] += Q[i,j] 
                 Q[i,j] = 0
             end
         end
@@ -262,7 +268,7 @@ function generate_qubo(G)
             J[i,j] = 0.0
         end
         J[i,i] = 1/4*sum(Q[i,j] + Q[j,i] for j=1:n*n)
-
+        
     end
     return J, orderDict, n*n, Q
 end
@@ -270,7 +276,7 @@ end
 function generate_path(ans, orderDict)
     res = []
     for i in ans
-        if ans[i] == 1
+        if ans[i] == 1 
             append!(res, orderDict[int(i)])
         end
     end
@@ -279,8 +285,8 @@ function generate_path(ans, orderDict)
     return path
 end
 
-function check(ans, Q, G)
-    E = 0
+function check(ans, Q, G) 
+    E = 0 
     for (i,j) in Q
         E += Q[i,j]*ans[string(i)]*ans[string(j)]
         #E += Q[i,j]*ans[i]*ans[j]
@@ -295,7 +301,7 @@ function new_game(change_to)
     global snake_body, snake_position, fruit_position, fruit_spawn, direction
 
     direction = change_to
-
+ 
     # Moving the snake
     if direction == "UP"
         snake_position[2] -= 1
@@ -315,18 +321,18 @@ function new_game(change_to)
     else
         pop!(snake_body)
     end
-
+         
     if not fruit_spawn
         choices = []
-        for i=1:window_x//50
+        for i=1:window_x//50 
             for j=1:window_y//50
-                if [i,j] not in snake_body
+                if [i,j] not in snake_body 
                     append!(choice, [i,j])
                 end
             end
         fruit_position = rand(choices)
         end
-
+         
     fruit_spawn = true
     end
 end
@@ -335,10 +341,12 @@ end
 while true
     path = solve()
     if length(snake_body) == window_x//50 * window_y//50 - 1
-        #If the snake and the fruit fill the entire board then halt the game
+        #If the snake and the fruit fill the entire board then halt the game  
         print("Victory")
         break
     end
 end
 
 solve()
+
+
