@@ -337,16 +337,15 @@ function new_game(change_to)
     end
 end
 
-
-while true
-    path = solve()
-    if length(snake_body) == window_x//50 * window_y//50 - 1
+@time begin
+    while true
+        path = solve()
+        if length(snake_body) == window_x//50 * window_y//50 - 1
         #If the snake and the fruit fill the entire board then halt the game  
-        print("Victory")
-        break
+            print("Victory")
+            break
+        end
     end
 end
-
-solve()
 
 
