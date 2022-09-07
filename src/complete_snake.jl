@@ -330,8 +330,8 @@ function new_game(change_to)
 			append!(choices,[[i,j]])
                 end
             end
-        fruit_position = rand(choices)
         end
+	fruit_position = rand(choices)
          
     fruit_spawn = true
     end
